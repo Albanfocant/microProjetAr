@@ -1,35 +1,210 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 
 <head>
-  <title>Ma première app AR</title>
-  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script> 
+  <title>Morellet AR - Final Version</title>
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.3.0/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
 </head>
 
-<body>
-    <a-scene embedded
-    arjs="sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best ; changeMatrixMode: modelViewMatrix;"
-    renderer="sortObjects: true; antialias: true; colorManagement: true; logarithmicDepthBuffer: true;"
+<body style="margin : 0px; overflow: hidden;">
 
-    vr-mode-ui="enabled: false"
+  <div id="container1"></div> <div id="container2"></div> <div id="container3"></div> <div id="container4"></div> <script>
+    let sketch1 = function (p) {
+      let cols = 126; let rows = 126; let tailleCarre = 6; let vitesse = 20;
+      let modeSelectionne = 0; let img1, img2, img3; let imageAffichee = null;
+      let zonesBlanches = [1,2,3,4,5,6,7,8,14,15,18,22,21,25,26,28,29,31,32,33,35,36,42,43,44,45,46,47,48,49];
+      let zonesNoire = [9,10,11,12,13,16,17,19,20,23,24,27,30,34,37,38,39,40,41];
+      let codeBinaireBrut = "00111100 01100010 01101111 01100100 01111001 00100000 01100011 01101100 01100001 01110011 01110011 00111101 00100010 01110111 01110000 00101101 01110011 01101001 01101110 01100111 01110101 01101100 01100001 01110010 00100000 01110000 01100001 01100111 01100101 00101101 01110100 01100101 01101101 01110000 01101100 01100001 01110100 01100101 00101101 01100100 01100101 01100110 01100001 01110101 01101100 01110100";
+      let dataNettoyee = codeBinaireBrut.replace(/\s+/g, '');
+      let indicesAnimes = []; let curseurAnimation = 0;
 
-    smooth=" true" smoothCount="5" smoothTolerance=".05" smoothThreshold="5"
-    
-    sourceWidth="800" sourceHeight="600" displayWidth="1280" displayHeight="720">
+      p.preload = function () {
+        // Images aléatoires pour le grand marqueur (si on tombe sur les 20%)
+        img1 = p.loadImage('./assets/image.jpg');
+        img2 = p.loadImage('./assets/image2.jpg');
+        img3 = p.loadImage('./assets/image3.jpg');
+      };
 
-      
-        <a-marker type='barcode' value='0'>
-   
-            <a-text value="Hello world!" 
-            side="double" position = "0 0 -1" rotation="270 0 0" 
-            width="8"
-            color="red" align="center" >
-            </a-text>
-            
-         </a-marker>
+      p.setup = function () {
+        p.noCanvas();
+        let cnv = p.createCanvas(756, 756); cnv.id("texture-marker-1"); cnv.hide();
+        p.noStroke();
+        
+        let chance = p.random(100);
+        if (chance < 80) { modeSelectionne = 0; preparerPattern(); }
+        else if (chance < 86.66) { modeSelectionne = 1; imageAffichee = img1; preparePhoto(); }
+        else if (chance < 93.33) { modeSelectionne = 2; imageAffichee = img2; preparePhoto(); }
+        else { modeSelectionne = 3; imageAffichee = img3; preparePhoto(); }
+      };
 
-        <a-entity camera></a-entity>
+      p.draw = function () {
+        if (modeSelectionne > 0) p.noLoop();
+        else {
+          for (let i = 0; i < vitesse; i++) {
+            if (curseurAnimation >= indicesAnimes.length) { p.noLoop(); break; }
+            let indexReel = indicesAnimes[curseurAnimation];
+            dessinerPixelPattern(indexReel % cols, Math.floor(indexReel / cols), indexReel);
+            curseurAnimation++;
+          }
+        }
+      };
+
+      function preparePhoto() { 
+        p.background('#13273f'); 
+        if (imageAffichee) { 
+          let s = Math.floor(p.width * 0.8); 
+          imageAffichee.resize(s, s); 
+          p.image(imageAffichee, (p.width - s)/2, (p.height - s)/2); 
+        } 
+      }
+
+      function preparerPattern() { 
+        p.clear(); 
+        p.randomSeed(42); 
+        let idx = 0; 
+        for(let y=0; y<rows; y++) for(let x=0; x<cols; x++) { 
+          let n = (Math.floor(y/18)*7)+Math.floor(x/18)+1; 
+          if(zonesBlanches.includes(n)) indicesAnimes.push(idx); 
+          else if(zonesNoire.includes(n)) dessinerPixelPattern(x, y, idx); 
+          else { p.fill('#13273f'); p.rect(x*6, y*6, 6, 6); } 
+          idx++; 
+        } 
+      }
+
+      function dessinerPixelPattern(x, y, i) { 
+        let b = dataNettoyee.charAt(i % dataNettoyee.length); 
+        if (p.random(1) < 0.85 || b == '0') p.fill('#13273f'); 
+        else p.fill('#eb5663'); 
+        p.rect(x * 6, y * 6, 6, 6); 
+      }
+    };
+    new p5(sketch1, "container1");
+  </script>
+
+
+  <script>
+    let sketch2 = function (p) {
+      let img;
+      p.preload = function () { 
+        img = p.loadImage('./assets/Protocole.png'); 
+      };
+      p.setup = function () {
+        p.noCanvas(); 
+        let cnv = p.createCanvas(756, 756); 
+        cnv.id("texture-marker-2"); 
+        cnv.hide();
+        
+        if (img) {
+          p.background('#13273f');
+          let s = Math.floor(p.width * 0.9); // Image à 90% de la taille
+          img.resize(s, 0); // Resize proportionnel
+          // Centrage
+          p.image(img, (p.width-img.width)/2, (p.height-img.height)/2);
+        } else {
+          p.background(200, 0, 0); p.textAlign(p.CENTER); p.textSize(50);
+          p.text("Protocole.png ?", p.width/2, p.height/2);
+        }
+        p.noLoop();
+      };
+    };
+    new p5(sketch2, "container2");
+  </script>
+
+
+  <script>
+    let sketch3 = function (p) {
+      let img;
+      p.preload = function () { 
+        img = p.loadImage('./assets/Artiste.png'); 
+      };
+      p.setup = function () {
+        p.noCanvas(); 
+        let cnv = p.createCanvas(756, 756); 
+        cnv.id("texture-marker-3"); 
+        cnv.hide();
+        
+        if (img) {
+          p.background('#13273f');
+          let s = Math.floor(p.width * 0.9);
+          img.resize(s, 0);
+          p.image(img, (p.width-img.width)/2, (p.height-img.height)/2);
+        } else {
+          p.background(200, 0, 0); p.textAlign(p.CENTER); p.textSize(50);
+          p.text("Artiste.png ?", p.width/2, p.height/2);
+        }
+        p.noLoop();
+      };
+    };
+    new p5(sketch3, "container3");
+  </script>
+
+
+  <script>
+    let sketch4 = function (p) {
+      let img;
+      p.preload = function () { 
+        img = p.loadImage('./assets/Travail.png'); 
+      };
+      p.setup = function () {
+        p.noCanvas(); 
+        let cnv = p.createCanvas(756, 756); 
+        cnv.id("texture-marker-4"); 
+        cnv.hide();
+        
+        if (img) {
+          p.background('#13273f');
+          let s = Math.floor(p.width * 0.9);
+          img.resize(s, 0);
+          p.image(img, (p.width-img.width)/2, (p.height-img.height)/2);
+        } else {
+          p.background(200, 0, 0); p.textAlign(p.CENTER); p.textSize(50);
+          p.text("Travail.png ?", p.width/2, p.height/2);
+        }
+        p.noLoop();
+      };
+    };
+    new p5(sketch4, "container4");
+  </script>
+
+
+  <script>
+    const createDrawComponent = (name, textureId) => {
+      AFRAME.registerComponent(name, {
+        init() { setTimeout(() => { this.el.setAttribute("material", { src: textureId }); }, 500); },
+        tick() { var m = this.el.getObject3D("mesh").material; if(m.map) m.map.needsUpdate = true; }
+      });
+    };
+    createDrawComponent("draw-canvas1", "#texture-marker-1");
+    createDrawComponent("draw-canvas2", "#texture-marker-2");
+    createDrawComponent("draw-canvas3", "#texture-marker-3");
+    createDrawComponent("draw-canvas4", "#texture-marker-4");
+  </script>
+
+
+  <a-scene embedded
+    arjs="sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; changeMatrixMode: modelViewMatrix;"
+    vr-mode-ui="enabled: false" renderer="sortObjects: true; antialias: true; logarithmicDepthBuffer: true;">
+
+    <a-marker type="barcode" value="1">
+      <a-plane width="2" height="2" rotation="-90 0 0" material="shader: flat; transparent: true;" draw-canvas1></a-plane>
+    </a-marker>
+
+    <a-marker type="barcode" value="19">
+      <a-plane width="3" height="3" rotation="-90 0 0" material="shader: flat;" draw-canvas2></a-plane>
+    </a-marker>
+
+    <a-marker type="barcode" value="21">
+      <a-plane width="3" height="3" rotation="-90 0 0" material="shader: flat;" draw-canvas3></a-plane>
+    </a-marker>
+
+    <a-marker type="barcode" value="25">
+      <a-plane width="3" height="3" rotation="-90 0 0" material="shader: flat;" draw-canvas4></a-plane>
+    </a-marker>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
   </a-scene>
+
 </body>
 </html>
